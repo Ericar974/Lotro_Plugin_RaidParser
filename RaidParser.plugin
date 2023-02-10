@@ -6,4 +6,5 @@
 		<Version>1.0</Version>
 	</Information>
 	<Package>RaidParser.main</Package>
+	<Image>RaidParser/img/Hunter-icon.tga</Image>
 </Plugin>

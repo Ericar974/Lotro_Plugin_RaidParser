@@ -11,21 +11,25 @@ Global.PlayerDamage = 0
 
 window = Turbine.UI.Lotro.Window()
 window:SetVisible(true);
-window:SetPosition( 300, 400 );
+window:SetPosition( 500, 900 );
+window:SetSize( 200, 100 );
+window:SetText( "Update" );
+
+
 
 local quickslot = Turbine.UI.Lotro.Quickslot()
 quickslot:SetParent( window );
-quickslot:SetPosition( 55, 40 );
-quickslot:SetSize( 38, 38 );
+quickslot:SetPosition( 25, 50 );
+quickslot:SetSize( 150, 20 );
 quickslot:SetVisible(true);
-quickslot:SetShortcut( Turbine.UI.Lotro.Shortcut( Turbine.UI.Lotro.ShortcutType.Alias, "/Say D:1234;" ));
+quickslot:SetShortcut( Turbine.UI.Lotro.Shortcut( Turbine.UI.Lotro.ShortcutType.Alias, "/Say D:".. Global.PlayerDamage ..";" ));
 quickslot:SetAllowDrop(false);
 quickslot:SetEnabled(true);
 quickslot:SetWantsKeyEvents(true)
 quickslot:GetWantsUpdates()
-quickslot:SetBackColor(Turbine.UI.Color(1,0,0))
+quickslot:SetBackColor(Turbine.UI.Color(0.27,0.23,0.78))
+quickslot:SetOpacity(1)
 quickslot.MouseClick = function(sender,args)
-    Turbine.Shell.WriteLine('d')
     quickslot:SetVisible(false);
 end
 
@@ -33,13 +37,15 @@ Global.EnableButton = function ()
     quickslot:SetVisible(true);
 end
 
-
 local resetButton = Turbine.UI.Lotro.Button()
+resetButton:SetText("Reset")
 resetButton:SetParent( window );
+resetButton:SetPosition( 25, 50 );
 resetButton:SetVisible(true);
 resetButton.MouseClick = function(sender,args)
     Global.PlayerDamage = 0
     Global.TimeLoop()
+    quickslot:SetVisible(true);
 end
 
 
@@ -75,7 +81,3 @@ function Turbine.Chat.Received(sender, args) -- listen message in the chat of th
 end
 
 import "RaidParser.Parser.parser"
-
-
-
-
