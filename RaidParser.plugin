@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<Plugin>
+	<Information>
+		<Name>RaidParser</Name>
+		<Author>Armand D, alias Ericar</Author>
+		<Version>1.0</Version>
+	</Information>
+	<Package>RaidParser.main</Package>
+</Plugin>
