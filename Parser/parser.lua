@@ -5,9 +5,6 @@ import "Turbine.UI.Lotro"
 
 import "RaidParser.Lang.en"
 
-
-
-local allDamage = 0
 local loopingTime =  Turbine.Engine.GetGameTime();
 
 function Global.AddCallback(object, event, callback)
@@ -31,19 +28,15 @@ Global.AddCallback(Turbine.Chat,"Received",function(sender, args) -- track comba
 
     -- immediately grab timestamp (NB: actually it appears this doesn't change over successive calls in the same frame)
     local timestamp = Turbine.Engine.GetGameTime();
-    if (timestamp - loopingTime > 1) then 
-        TimeLoop()
+    if (timestamp - loopingTime > 2) then 
+        Global.TimeLoop()
         loopingTime = timestamp
     end
 
     -- grab line from combat log, strip it of color, trim it, and parse it according to the localized parsing function
 	local updateType,initiatorName,targetName,skillName,var1,var2,var3,var4 = Global.Parse(string.gsub(string.gsub(args.Message,"<rgb=#......>(.*)</rgb>","%1"),"^%s*(.-)%s*$", "%1"));
 	if (updateType == nil) then return end
-    allDamage = allDamage + var1
+    Global.PlayerDamage = Global.PlayerDamage + var1
     
     --Turbine.Shell.WriteLine(allDamage)
 end);
-
-_G.getDamageOfPlayer = function ()
-    return allDamage
-end

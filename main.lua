@@ -7,10 +7,11 @@ Turbine.Shell.WriteLine('RaidParser start') --
 
 _G.Global = {}
 
+Global.PlayerDamage = 0
+
 window = Turbine.UI.Lotro.Window()
 window:SetVisible(true);
 window:SetPosition( 300, 400 );
-
 
 local quickslot = Turbine.UI.Lotro.Quickslot()
 quickslot:SetParent( window );
@@ -23,6 +24,13 @@ quickslot:SetEnabled(true);
 quickslot:SetWantsKeyEvents(true)
 quickslot:GetWantsUpdates()
 quickslot:SetBackColor(Turbine.UI.Color(1,0,0))
+
+
+import "RaidParser.Utils.update"
+
+Global.TimeLoop = function ()
+    Global.UpdateShortCut(quickslot,Global.PlayerDamage)
+end
 
 -- Create new chat command
 GreetCommand = Turbine.ShellCommand()
@@ -39,11 +47,6 @@ end
 -- Register the chat command and link the command word to the code
 Turbine.Shell.AddCommand("GreetSelf", GreetCommand)
 
-_G.TimeLoop = function ()
-    CurrentDamageOfPlayer = getDamageOfPlayer()
-    Global.UpdateShortCut(quickslot,CurrentDamageOfPlayer)
-end
-
 
 function Turbine.Chat.Received(sender, args) -- listen message in the chat of the game | args = {Message,Sender,ChatType}
     if string.match(args.Message, "D:([%d%.]+);") and args.ChatType == 5 then
@@ -53,11 +56,8 @@ function Turbine.Chat.Received(sender, args) -- listen message in the chat of th
     end
 end
 
-
-
 import "RaidParser.Parser.parser"
 
-import "RaidParser.Utils.update"
 
 
 
