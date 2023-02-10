@@ -5,7 +5,8 @@ import "Turbine.UI.Lotro"
 
 import "RaidParser.Lang.en"
 
-local loopingTime =  Turbine.Engine.GetGameTime();
+local loopingTimer =  Turbine.Engine.GetGameTime();
+local resetTimer =  loopingTimer
 
 function Global.AddCallback(object, event, callback)
 	if (object[event] == nil) then
@@ -28,9 +29,13 @@ Global.AddCallback(Turbine.Chat,"Received",function(sender, args) -- track comba
 
     -- immediately grab timestamp (NB: actually it appears this doesn't change over successive calls in the same frame)
     local timestamp = Turbine.Engine.GetGameTime();
-    if (timestamp - loopingTime > 2) then 
+    if (timestamp - resetTimer > 2) then
+        Global.EnableButton()
+        resetTimer = timestamp
+    end
+    if (timestamp - loopingTimer > 1) then
         Global.TimeLoop()
-        loopingTime = timestamp
+        loopingTimer = timestamp
     end
 
     -- grab line from combat log, strip it of color, trim it, and parse it according to the localized parsing function

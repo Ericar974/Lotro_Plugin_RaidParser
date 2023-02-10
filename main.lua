@@ -24,6 +24,24 @@ quickslot:SetEnabled(true);
 quickslot:SetWantsKeyEvents(true)
 quickslot:GetWantsUpdates()
 quickslot:SetBackColor(Turbine.UI.Color(1,0,0))
+quickslot.MouseClick = function(sender,args)
+    Turbine.Shell.WriteLine('d')
+    quickslot:SetVisible(false);
+end
+
+Global.EnableButton = function ()
+    quickslot:SetVisible(true);
+end
+
+
+local resetButton = Turbine.UI.Lotro.Button()
+resetButton:SetParent( window );
+resetButton:SetVisible(true);
+resetButton.MouseClick = function(sender,args)
+    Global.PlayerDamage = 0
+    Global.TimeLoop()
+end
+
 
 
 import "RaidParser.Utils.update"
