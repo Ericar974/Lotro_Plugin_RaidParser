@@ -1,0 +1,9 @@
+{
+    "Lua.runtime.special": [],
+    "Lua.runtime.version": "Lua 5.1",
+    "Lua.runtime.pathStrict": false,
+    "Lua.runtime.plugin": "c:\\Users\\arman\\.vscode\\extensions\\lunarwtr.lotro-api-1.0.14\\resources\\Lua\\Plugin\\plugin.lua",
+    "Lua.workspace.library": [
+        "c:\\Users\\arman\\.vscode\\extensions\\lunarwtr.lotro-api-1.0.14\\resources\\Lua\\EmmyLua\\Turbine"
+    ]
+}

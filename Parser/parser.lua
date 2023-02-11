@@ -1,5 +1,5 @@
-import "Turbine" -- for Turbine.Shell and Turbine.ShellCommand
-import "Turbine.Gameplay" -- for Turbine.LocalPlayer
+import "Turbine"
+import "Turbine.Gameplay" 
 import "Turbine.UI"
 import "Turbine.UI.Lotro"
 
@@ -22,7 +22,7 @@ end
 
 
 Global.AddCallback(Turbine.Chat,"Received",function(sender, args) -- track combat chat
-    -- only parse combat text
+    -- 1) only parse combat text for now
     if ((args.ChatType ~= Turbine.ChatType.EnemyCombat) and (args.ChatType ~= Turbine.ChatType.PlayerCombat) and (args.ChatType ~= Turbine.ChatType.Death)) then
         return;
     end
