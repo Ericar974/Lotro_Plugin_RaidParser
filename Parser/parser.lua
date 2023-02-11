@@ -30,7 +30,7 @@ Global.AddCallback(Turbine.Chat,"Received",function(sender, args) -- track comba
     -- immediately grab timestamp (NB: actually it appears this doesn't change over successive calls in the same frame)
     local timestamp = Turbine.Engine.GetGameTime();
     if (timestamp - resetTimer > 2) then
-        Global.EnableButton()
+        Global.EnableButton(true)
         resetTimer = timestamp
     end
     if (timestamp - loopingTimer > 1) then
