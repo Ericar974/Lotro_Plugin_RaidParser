@@ -11,9 +11,10 @@ Welcome to the main page
 ]]
 
 Turbine.Shell.WriteLine('RaidParser BETA 1.0.0 from 12/02/2023') -- at launch
-
-
-import "RaidParser.Parser.main"
+--"N:([%a]+);D:([%d%.]+);"
+import "RaidParser.Parser.main" -- import the parser
+import "RaidParser.Parser.allPlayerParser"
+import "RaidParser.Class.Button"
 
 
 
