@@ -10,9 +10,10 @@ import "RaidParser.Class.ButtonImage"
 import "RaidParser.Lang.en"
 
 -- < define the local player
-localPlayer = Turbine.Gameplay.LocalPlayer.GetInstance()
+Global.localPlayer = Turbine.Gameplay.LocalPlayer.GetInstance()
+local inCombat = true
 
-PlayerName = localPlayer:GetName()
+PlayerName = Global.localPlayer:GetName()
 PlayerDamage = 1 -- set the damage at 1
 
 PlayersList = {} -- PlayersList : Array[Array] with {PlayerName, his damage, his label}
@@ -20,17 +21,16 @@ ChatId = 1
 ChaTyte = Turbine.ChatType.UserChat1
 
 DamageMax = 1
+local newParse = false
 local found = nil
 
 local updatePlayerDamage = function()
+    table.sort(PlayersList,sortByDamage)
     for i, value in ipairs(PlayersList) do
-        Turbine.Shell.WriteLine(value[1])
-        Turbine.Shell.WriteLine(value[2])
-        Turbine.Shell.WriteLine(DamageMax)
+        value[3]:SetWidth(130 * value[2] / DamageMax);
         value[3]:SetPosition(40, 20 + 20 * i);
-        value[3]:SetSize(130 * value[2] / DamageMax, 15);
     end
-    
+    newParse = false
 end
 
 local updateDps = Global.ButtonImage(550, 850, "RaidParser/img/send.tga", 512, 512,
@@ -59,21 +59,23 @@ UpdateShortCut = function(quickslot, value)
         "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. value .. ";"));
 end
 
+
 local Parse = Global.Parse()
+
 -- regex for all player
 local regex = "N:([%a]+);D:([%d%.]+);"
-local regexTable = {"^x","^x","^x","^x","^x","^x","^x","^x","^x","^x","^x","^x"}
-local regeneragteRegex = function ()
+local regexTable = { "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x" }
+local regeneragteRegex = function()
     for i, value in ipairs(PlayersList) do
-        beforeName ="N:("
+        beforeName = "N:("
         name = ""
         afterName = ");D:([%d%.]+);"
-        name = name .. beforeName ..value[1] .. afterName
+        name = name .. beforeName .. value[1] .. afterName
         regexTable[i] = name
     end
     regex = "^x"
-    Turbine.Shell.WriteLine(regex)
 end
+
 
 -- >
 
@@ -108,7 +110,7 @@ synchroBtn.MouseClick = function(sender, args)
 
     isListening = true
     DpsWindow:SetVisible(true);
-    
+
     EnableButton(true)
 end
 
@@ -117,14 +119,12 @@ local initBtn = function(sender, args)
     SetEnabled(startBtn, true)
 
     isInit = true
-
 end
 
 startBtn.MouseClick = function(sender, args)
     SetEnabled(startBtn, false)
 
     isStarted = true
-    EnableButton(true)
     UpdateShortCut(updateDpsBtn, PlayerDamage)
     regeneragteRegex()
 end
@@ -143,11 +143,12 @@ stopBtn.MouseClick = function(sender, args)
     EnableButton(false)
 
     PlayerDamage = 1
+    inCombat = true
     PlayersList = {}
     ChatId = 1
     ChaTyte = Turbine.ChatType.UserChat1
     regex = "N:([%a]+);D:([%d%.]+);"
-    
+
     DamageMax = 1
     found = nil
     updatePlayerDamage()
@@ -167,7 +168,6 @@ end
 
 
 local loopingTimer = Turbine.Engine.GetGameTime();
-local resetTimer = loopingTimer
 
 function AddCallback(object, event, callback)
     if (object[event] == nil) then
@@ -193,7 +193,7 @@ DpsWindow:SetVisible(false);
 
 
 local newPlayer = function(player, damage, index)
-    PlayersList[index][3]:SetText(player .. " ".. damage);
+    PlayersList[index][3]:SetText(player .. " " .. damage);
     PlayersList[index][3]:SetParent(DpsWindow);
     PlayersList[index][3]:SetSize(130 * damage / DamageMax, 15);
     PlayersList[index][3]:SetPosition(40, 20 + 20 * index);
@@ -209,20 +209,18 @@ function sortByDamage(a, b)
     return tonumber(a[2]) > tonumber(b[2])
 end
 
-
-
 AddCallback(Turbine.Chat, "Received", function(sender, args) -- track combat chat
     -- < PLAYER CHAT COMBAT
     -- 1) only parse combat text for now
     if (isStarted and ((args.ChatType == Turbine.ChatType.EnemyCombat) or (args.ChatType == Turbine.ChatType.PlayerCombat) or (args.ChatType == Turbine.ChatType.Death))) then
         -- immediately grab timestamp (NB: actually it appears this doesn't change over successive calls in the same frame)
         local timestamp = Turbine.Engine.GetGameTime();
-        if (timestamp - resetTimer > 2) then
-            EnableButton(true)
-            resetTimer = timestamp
-        end
-        if (timestamp - loopingTimer > 1) then
+        if (timestamp - loopingTimer > 3) then
             TimeLoop()
+            EnableButton(true)
+            if newParse then
+                updatePlayerDamage()
+            end
             loopingTimer = timestamp
         end
 
@@ -232,17 +230,16 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track combat cha
         if (updateType == nil) then return end
         PlayerDamage = PlayerDamage + var1
         -- >
-    elseif (isListening and 
-    (string.match(args.Message, regex) or string.match(args.Message, regexTable[1]) or string.match(args.Message, regexTable[2]) or string.match(args.Message, regexTable[3]) 
-    or string.match(args.Message, regexTable[4]) or string.match(args.Message, regexTable[5]) or string.match(args.Message, regexTable[6])
-    or string.match(args.Message, regexTable[7]) or string.match(args.Message, regexTable[8]) or string.match(args.Message, regexTable[9])
-    or string.match(args.Message, regexTable[10]) or string.match(args.Message, regexTable[11]) or string.match(args.Message, regexTable[12])) 
-    and args.ChatType == ChaTyte) then
+        return
+    elseif (isListening and args.ChatType == ChaTyte and
+        (string.match(args.Message, regex) or string.match(args.Message, regexTable[1]) or string.match(args.Message, regexTable[2]) or string.match(args.Message, regexTable[3])
+        or string.match(args.Message, regexTable[4]) or string.match(args.Message, regexTable[5]) or string.match(args.Message, regexTable[6])
+        or string.match(args.Message, regexTable[7]) or string.match(args.Message, regexTable[8]) or string.match(args.Message, regexTable[9])
+        or string.match(args.Message, regexTable[10]) or string.match(args.Message, regexTable[11]) or string.match(args.Message, regexTable[12]))
+        ) then
         -- < RAID CHAT COMBAT
         local player = string.match(args.Message, "N:([%a]+);")
         local damage = string.match(args.Message, "D:([%d%.]+);")
-
-
 
         if not isStarted then
             initBtn()
@@ -260,27 +257,21 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track combat cha
             end
             return
         end
-                    -- < TODO foreach player in PlayersList
-                    found = false
-                    for i, value in ipairs(PlayersList) do
-                        if value[1] == player then
-                            found = true
-                            value[2] = damage
-                        end
-                    end
-                    -- />
-
         -- < if damage is bigger than DamageMax we change DamageMax
         if (tonumber(damage) > DamageMax) then
             DamageMax = tonumber(damage)
         end
         -- >
-
-
-
-        table.sort(PlayersList, sortByDamage)
-        updatePlayerDamage()
-
+        for i, value in ipairs(PlayersList) do
+            if value[1] == player then
+                value[2] = damage
+                newParse = true
+                if not inCombat then
+                    updatePlayerDamage()
+                end
+                return
+            end
+        end
         -- >
     else
         return;
@@ -288,11 +279,14 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track combat cha
 end);
 -- >
 
+AddCallback(Global.localPlayer, "InCombatChanged", function()
+    inCombat = Global.localPlayer:IsInCombat();
 
-
-
-
-
+    if (not inCombat) then
+        
+        updatePlayerDamage()
+    end
+end);
 
 
 
