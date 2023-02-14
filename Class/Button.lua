@@ -13,7 +13,7 @@ local Button = Global.Button(...)
 
 function Global.Button( name, parent, x, y, w, h, enable) -- Create a button | name:String, parent:Controll, x:axeX, y:axeY , w:width, h:heigth, enable:bool
     -- Contructor
-    local Btn = Turbine.UI.Lotro.Button()
+    local Btn = Turbine.UI.Lotro.GoldButton()
     Btn:SetParent(parent)
     Btn:SetPosition(x,y)
     Btn:SetSize(w, h)

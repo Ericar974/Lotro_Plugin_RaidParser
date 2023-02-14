@@ -10,9 +10,10 @@ local window = Global.ResizeImage(...)
 ]]
 
 
-function Global.ResizeImage(imagePath, imageWidth, imageHeight, newWidth, newHeight) -- Resize a image 
+function Global.ResizeImage(imagePath, imageWidth, imageHeight,parent, newWidth, newHeight) -- Resize a image 
 
     local window = Turbine.UI.Window()
+    window:SetParent(parent)
     -- < litle trick to get the corect size of the image
     window:SetSize(imageWidth, imageHeight)
     window:SetBackground(imagePath); --img path
