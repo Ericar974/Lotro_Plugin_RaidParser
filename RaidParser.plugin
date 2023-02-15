@@ -3,7 +3,7 @@
 	<Information>
 		<Name>RaidParser</Name>
 		<Author>Armand D, alias Ericar</Author>
-		<Version>1.0.0</Version>
+		<Version>BETA Lunar</Version>
 		<Image>RaidParser/img/logo.tga</Image>
 	</Information>
 	<Package>RaidParser.main</Package>

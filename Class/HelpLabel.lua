@@ -6,7 +6,8 @@ Class File
 
 Just a simple Text label
 
-
+call exemple:
+local window = Global.HelpLabel(...)
 ]]
 
 

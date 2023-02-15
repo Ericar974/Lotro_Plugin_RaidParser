@@ -1,3 +1,4 @@
+-- copy helper from CombatAnalysis Plugin
 
 -- declare some global UI variables
 _G.mouseDown = false;
