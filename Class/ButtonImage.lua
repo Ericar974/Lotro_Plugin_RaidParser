@@ -20,7 +20,7 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     window:SetPosition(x, y)
     window:SetSize(110, 110)
     window:SetVisible(true)
-
+    
     -- Window for displaying image
     ImageWindow = Turbine.UI.Window()
     ImageWindow:SetParent(window);
@@ -28,9 +28,9 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     ImageWindow:SetSize(imageWidth, imageHeight)
     ImageWindow:SetBackground(imagePath); --img path
     ImageWindow:SetStretchMode(1);
-    ImageWindow:SetSize(110, 110)                   -- >
+    ImageWindow:SetSize(70, 70)                   -- >
     ImageWindow:SetVisible(true)
-
+    
     ImageWindow.move = Turbine.UI.Window()
     ImageWindow.move:SetParent(window);
     ImageWindow.move:SetSize(10, 10)
@@ -40,17 +40,27 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     ImageWindow.move.MouseDown = function(sender, args)
         window.oldX = args.X
         window.oldY = args.Y
-        ImageWindow.move.MouseMove = function(sender, args)
-            window:SetPosition(window:GetLeft() + (args.X - window.oldX),
-            window:GetTop() + (args.Y - window.oldY))
-            window.oldX = args.X
-            window.oldY = args.Y
-        end
-        ImageWindow.move.MouseUp = function(sender, args)
-            ImageWindow.move.MouseMove = nil
-            ImageWindow.move.MouseUp = nil
+        window.dragging = true
+    end
+    
+    ImageWindow.move.MouseMove = function(sender, args)
+        if window.dragging then
+            local mouseX, mouseY = Turbine.UI.Display.GetMousePosition()
+            local newX = mouseX - window.oldX
+            local newY = mouseY - window.oldY
+            local screenWidth, screenHeight = Turbine.UI.Display:GetSize()
+            local newLeft = math.max(0, math.min(newX, screenWidth - window:GetWidth()))
+            local newTop = math.max(0, math.min(newY, screenHeight - window:GetHeight()))
+            window:SetPosition(newLeft, newTop)
         end
     end
+    
+    ImageWindow.move.MouseUp = function(sender, args)
+        window.dragging = false
+    end
+    
+
+
 
     -- < Alias window
     AliasWindow = Turbine.UI.Window()

@@ -7,10 +7,17 @@ import "Turbine.UI.Lotro"
 import "RaidParser.Class.ButtonImage"
 import "RaidParser.Class.ResizeImage"
 -- >
-
 import "RaidParser.Utils.classIcons"
 import "RaidParser.Utils.newPlayerInRoom"
-import "RaidParser.Rooms.roomDps"
+import "RaidParser.Elements.roomDps"
+import "RaidParser.Elements.optionWindow"
+
+-- Get the local parse
+import "RaidParser.Lang.en"
+local Parse = Global.ParseEn --import
+-- import "RaidParser.Lang.fr"
+-- import "RaidParser.Lang.de"
+-- >
 
 -- < define the local player
 Global.localPlayer = Turbine.Gameplay.LocalPlayer.GetInstance()
@@ -19,8 +26,20 @@ local inCombat = true
 PlayerName = Global.localPlayer:GetName()
 PlayerClass = Global.localPlayer:GetClass()
 PlayerDamage = 1 -- set the damage at 1
-ChatId = 1
-ChaTyte = Turbine.ChatType.UserChat1
+
+
+ChatId = Global.ChatId
+ChaTyte = Global.ChaTyte
+
+local SetEnabled = function(object, bool)
+    object:SetEnabled(bool)
+end
+
+Global.saveBtn.MouseClick = function(sender, args)
+    ChatId = Global.ChatId
+    ChaTyte = Global.ChaTyte
+    SetEnabled(Global.saveBtn, false)
+end
 
 -- >
 
@@ -35,18 +54,15 @@ DpsWindow.label = roomDps[2]
 local loopingTimer = Turbine.Engine.GetGameTime();
 local newParse = false
 local found = nil
--- <import "RaidParser.Parser.parser" -- Get the local parse
-import "RaidParser.Lang.en"
--- >
-local Parse = Global.ParseEn() --import
+
 
 local function abbreviateNumber(number) -- Convert dmg with K / M / B
     if number >= 1000000000 then
-        return string.format("%.1fB", number / 1000000000)
+        return string.format("%.2fB", number / 1000000000)
     elseif number >= 1000000 then
-        return string.format("%.1fM", number / 1000000)
+        return string.format("%.2fM", number / 1000000)
     elseif number >= 1000 then
-        return string.format("%.1fk", number / 1000)
+        return string.format("%.2fk", number / 1000)
     else
         return number
     end
@@ -54,7 +70,7 @@ end
 
 -- sort the playerList by the damage
 function sortByDamage(a, b)
-    return tonumber(a[2]) > tonumber(b[2])
+    return a[2] > b[2]
 end
 
 local function updatePlayerDamage() -- Update the label damage of players
@@ -67,29 +83,33 @@ local function updatePlayerDamage() -- Update the label damage of players
     newParse = false
 end
 
-
 -- The Window of onClick image for sending information
 local updateDps = Global.ButtonImage(550, 850, "RaidParser/img/picto-target.tga", 591, 591,
     "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";" .. PlayerClass)
-updateDps[2]:SetVisible(false)
+   --local updateDps = Global.ButtonImage(550, 850, "RaidParser/img/briqueLait.tga", 600, 562,
+    --"/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";" .. PlayerClass)
 
 -- The onClick image for update your informations
+local imageUpdateDpsBtn = updateDps[2]
 local updateDpsBtn = updateDps[3]
 
-EnableButton = function(bool) -- make the updateDpsBtn invisible/visible
+updateDps[2]:SetVisible(false)
+updateDps[2].move.MouseClick = function (sender, args)
+    UpdateShortCut(updateDpsBtn, PlayerDamage)
+end
+
+imageUpdateDpsBtn.MouseClick = function (sender,args)
+    UpdateShortCut(updateDpsBtn, PlayerDamage)
+end
+
+
+EnableSendingButton = function(bool) -- make the updateDpsBtn invisible/visible
     updateDpsBtn.quickslot:SetVisible(bool);
     updateDps[2]:SetVisible(bool);
     updateDps[2].move:SetVisible(bool);
 end
 
-updateDpsBtn.quickslot.MouseClick = function(sender, args) -- make the updateDpsBtn invisible at click
-    EnableButton(false)
-end
-
-TimeLoop = function() -- Update the Dps value of the Btn for sending to chat
-    UpdateShortCut(updateDpsBtn, PlayerDamage)
-end
-
+-- Update the data of the image that is sent to the chat
 UpdateShortCut = function(quickslot, value) -- Actualize the shortcut of onClick Image/updateDpsBrn
     quickslot.quickslot:SetShortcut(Turbine.UI.Lotro.Shortcut(Turbine.UI.Lotro.ShortcutType.Alias,
         "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. value .. ";" .. PlayerClass));
@@ -109,95 +129,59 @@ local regeneragteRegex = function()
     regex = "^x"
 end
 
--- < options window
-local isListening = false
-local isStarted = false
+-- antispam for joining the room
+local nbSpam = 0
 
-Global.optionsVisible = function()
-    options:SetVisible(true)
-end
-
-options = Turbine.UI.Lotro.GoldWindow()
-options:SetPosition(1500, 350)
-options:SetSize(400, 400)
-options:SetText('Options')
-options:SetWantsKeyEvents(true) -- setup the key event for escape
-function options.KeyDown(sender, args)
-    if (args.Action == Turbine.UI.Lotro.Action.Escape) then
-      -- close the window if escape pressed
-      options:SetVisible(false)
+updateDpsBtn.quickslot.MouseClick = function(sender, args) -- make the updateDpsBtn invisible at click
+    EnableSendingButton(false)
+    if not isStarted then
+        if nbSpam < 2 then -- antispam ( 3 try )
+            EnableSendingButton(true)
+            nbSpam = nbSpam + 1
+            return
+        end
+        return
     end
 end
 
-
-
-helpToLaunch = Turbine.UI.Window()
-helpToLaunch:SetParent(options)
-helpToLaunch:SetSize(400, 100)
-helpToLaunch:SetPosition(0, 250)
-helpToLaunch:SetOpacity(1)
---helpToLaunch:SetBackColor(Turbine.UI.Color.Red)
-helpToLaunch:SetVisible(true)
-
--- need to make a class
-import "RaidParser.Class.HelpLabel"
-helpToLaunch.labelSync = Global.HelpLabel(
-    "When your chan is configured, you must wait for everyone to start the synchronization before continuing.",
-    helpToLaunch, 400, 100)
-helpToLaunch.labelInit = Global.HelpLabel(
-    "If everyone synchronized, click on the target to enter in the room, WAIT EVERYONE before starting (stop & restart if someone fail the sync)",
-    helpToLaunch, 400, 100)
-helpToLaunch.labelInit:SetVisible(false)
-helpToLaunch.labelStart = Global.HelpLabel(
-    "You can stop & leave the room OR you can reset your dps and the room (if the group reset, everyone as to)",
-    helpToLaunch, 400, 100)
-helpToLaunch.labelStart:SetVisible(false)
-
-local SetEnabled = function(object, bool)
-    object:SetEnabled(bool)
-end
-
-import "RaidParser.Class.Button"
-
 --setup of all buttons of Options Window and these functions MouseClick
-synchroBtn = Global.Button("Synchro", options, 10, 350, 80, 50, true)
-startBtn = Global.Button("Start", options, 110, 350, 80, 50, false)
-resetBtn = Global.Button("Reset", options, 210, 350, 80, 50, false)
-stopBtn = Global.Button("Stop", options, 310, 350, 80, 50, false)
+local isListening = false
+local isStarted = false
 
--- >
+synchroBtn = Global.Button("Synchro", Global.helpToLaunch, 10, 100, 80, 50, true)
+startBtn = Global.Button("Start", Global.helpToLaunch, 110, 100, 80, 50, false)
+resetBtn = Global.Button("Reset", Global.helpToLaunch, 210, 100, 80, 50, false)
+stopBtn = Global.Button("Quit", Global.helpToLaunch, 310, 100, 80, 50, false)
 
--- < onclick events for each btn
+-- onclick
 synchroBtn.MouseClick = function(sender, args)
+    UpdateShortCut(updateDpsBtn, PlayerDamage)
     SetEnabled(synchroBtn, false)
-    helpToLaunch.labelSync:SetVisible(false)
-    helpToLaunch.labelInit:SetVisible(true)
+    Global.helpToLaunch.labelSync:SetVisible(false)
+    Global.helpToLaunch.labelInit:SetVisible(true)
     SetEnabled(stopBtn, true)
     isListening = true
     DpsWindow:SetVisible(true);
-    EnableButton(true)
-end
-
-local initBtn = function(sender, args)
-    SetEnabled(startBtn, true)
+    EnableSendingButton(true)
 end
 
 startBtn.MouseClick = function(sender, args)
-    options:SetVisible(false)
+    Global.options:SetVisible(false)
+    EnableSendingButton(false)
     SetEnabled(resetBtn, true)
     SetEnabled(startBtn, false)
-    helpToLaunch.labelInit:SetVisible(false)
-    helpToLaunch.labelStart:SetVisible(true)
-
+    Global.helpToLaunch.labelInit:SetVisible(false)
+    Global.helpToLaunch.labelStart:SetVisible(true)
+    PlayerDamage = 0
     isStarted = true
     UpdateShortCut(updateDpsBtn, PlayerDamage)
     regeneragteRegex()
 end
 
 resetBtn.MouseClick = function(sender, args)
-    EnableButton(false)
-    PlayerDamage = 1
+    EnableSendingButton(false)
     inCombat = true
+    PlayerDamage = 0
     DamageMax = 1
     for i, value in ipairs(PlayersList) do
         value[2] = 1
@@ -205,39 +189,36 @@ resetBtn.MouseClick = function(sender, args)
     updatePlayerDamage()
 end
 
+-- stopBtn mean quit the room and reset all parameters
 stopBtn.MouseClick = function(sender, args)
+    -- reset the Dps window
+    roomDps = Global.RoomDps()
+    DpsWindow = roomDps[1]
+    DpsWindow.label = roomDps[2]
+    -- reset btns
     SetEnabled(stopBtn, false)
     SetEnabled(resetBtn, false)
     SetEnabled(startBtn, false)
     SetEnabled(synchroBtn, true)
-
-    helpToLaunch.labelSync:SetVisible(true)
-    helpToLaunch.labelInit:SetVisible(false)
-    helpToLaunch.labelStart:SetVisible(false)
-
+    Global.helpToLaunch.labelSync:SetVisible(true)
+    Global.helpToLaunch.labelInit:SetVisible(false)
+    Global.helpToLaunch.labelStart:SetVisible(false)
+    newParse = false
     isListening = false
     isStarted = false
-
-    DpsWindow:SetVisible(false);
-    EnableButton(false)
-
     PlayerDamage = 1
+    DamageMax = 1
+    nbSpam = 0
+    EnableSendingButton(false)
+    UpdateShortCut(updateDpsBtn, PlayerDamage)
     inCombat = true
     PlayersList = {}
-    ChatId = 1
-    ChaTyte = Turbine.ChatType.UserChat1
     regex = "N:([%a]+);D:([%d%.]+);"
-
-    DamageMax = 1
+    regexTable = { "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x" }
     found = nil
     updatePlayerDamage()
-    --reset the Dps window
-    roomDps = Global.RoomDps()
-    DpsWindow = roomDps[1]
-    DpsWindow.label = roomDps[2]
 end
 -->
-
 
 function AddCallback(object, event, callback)
     if (object[event] == nil) then
@@ -257,15 +238,6 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track chat ingam
     if (isStarted and ((args.ChatType == Turbine.ChatType.EnemyCombat) or (args.ChatType == Turbine.ChatType.PlayerCombat) or (args.ChatType == Turbine.ChatType.Death))) then
         -- immediately grab timestamp (NB: actually it appears this doesn't change over successive calls in the same frame)
         local timestamp = Turbine.Engine.GetGameTime();
-        -- update every 3seconde the room, the sendBtn
-        if (timestamp - loopingTimer > 3) then
-            TimeLoop()
-            EnableButton(true)
-            if newParse then
-                updatePlayerDamage()
-            end
-            loopingTimer = timestamp
-        end
 
         -- grab line from combat log, strip it of color, trim it, and parse it according to the localized parsing function
         --              1, initiatorName, targetName, skillName, amount, avoidType, critType, dmgType;
@@ -274,7 +246,19 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track chat ingam
         if (updateType == nil) then return end
         PlayerDamage = PlayerDamage + var1
         -- >
+
+        -- update every 3seconde the room, the sendBtn
+        if (timestamp - loopingTimer > 3) then
+            UpdateShortCut(updateDpsBtn, PlayerDamage)
+            EnableSendingButton(true)
+            if newParse then
+                updatePlayerDamage()
+            end
+            loopingTimer = timestamp
+        end
         return
+
+        -- < RAID CHAT COMBAT
         -- try all regex from playeList
     elseif (isListening and args.ChatType == ChaTyte and
         (string.match(args.Message, regex) or string.match(args.Message, regexTable[1]) or string.match(args.Message, regexTable[2]) or string.match(args.Message, regexTable[3])
@@ -282,12 +266,12 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track chat ingam
         or string.match(args.Message, regexTable[7]) or string.match(args.Message, regexTable[8]) or string.match(args.Message, regexTable[9])
         or string.match(args.Message, regexTable[10]) or string.match(args.Message, regexTable[11]) or string.match(args.Message, regexTable[12]))
         ) then
-        -- < RAID CHAT COMBAT
         local player = string.match(args.Message, "N:([%a]+);")
         local damage = string.match(args.Message, "D:([%d%.]+);")
 
+        -- 1/ When room isn't setup
         if not isStarted then
-            initBtn()
+            SetEnabled(startBtn, true)
             -- < foreach player in PlayersList
             found = false
             for i, value in ipairs(PlayersList) do
@@ -304,6 +288,7 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track chat ingam
             end
             return
         end
+        -- 2/ When room lock
         -- < if damage is bigger than DamageMax we change DamageMax
         damage = tonumber(damage)
         if (damage > DamageMax) then
@@ -322,16 +307,15 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track chat ingam
         end
         return
         -- >
-    else
-        return;
     end
 end);
 -- >
 
 AddCallback(Global.localPlayer, "InCombatChanged", function()
     inCombat = Global.localPlayer:IsInCombat();
-
     if (not inCombat) then
         updatePlayerDamage()
+        UpdateShortCut(updateDpsBtn, PlayerDamage)
+        EnableSendingButton(true)
     end
 end);

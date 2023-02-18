@@ -4,7 +4,11 @@
 		<Name>RaidParser</Name>
 		<Author>Armand D, alias Ericar</Author>
 		<Version>BETA Lunar</Version>
+		<Description>
+			RaidParser can help you and your group to analyse your damage/Tps/heal at anytime in the fight
+		</Description>
 		<Image>RaidParser/img/logo.tga</Image>
 	</Information>
 	<Package>RaidParser.main</Package>
-</Plugin>
+	<Configuration Apartment="RaidParser" />
+</Plugin>	
