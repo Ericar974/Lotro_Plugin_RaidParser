@@ -3,10 +3,10 @@ import "Turbine.Gameplay"
 import "Turbine.UI"
 import "Turbine.UI.Lotro"
 
-_G.Global = {} -- you can use Global.YourConst
-Global.left = 0.5 ; Global.top = 0.5; Global.width = 0.5; Global.height = 0.5;
-Global.screenWidth , Global.screenHeight = Turbine.UI.Display.GetSize();
+Turbine.Shell.WriteLine('RaidParser BETA from 8 April 2023') -- at launch
 
+_G.Global = {} -- you can use Global.YourConst
+Global.screenWidth , Global.screenHeight = Turbine.UI.Display.GetSize();
 
 --[[
     List pb :
@@ -42,13 +42,13 @@ end
 
 ]]
 
-Turbine.Shell.WriteLine('RaidParser Lunar BETA from 15/02/2023') -- at launch
+import "RaidParser.Preferences.main" -- users preferences
 import "RaidParser.Parser.main" -- import the parser
 import "RaidParser.Class.Button"
 
 -- <icon image 
 windowIcon = Turbine.UI.Window()
-windowIcon:SetPosition(Global.left * Global.screenWidth, Global.top * Global.screenHeight)
+windowIcon:SetPosition(Global.Settings.iconPosition.left * Global.screenWidth, Global.Settings.iconPosition.top * Global.screenHeight)
 windowIcon:SetSize(69,50)
 windowIcon:SetOpacity(0.5)
 windowIcon:SetZOrder(1)
@@ -80,7 +80,12 @@ icon.MouseMove = function(sender, args)
         local newX = math.max(0, math.min(mouseX - windowIcon.oldX, screenWidth - windowIcon:GetWidth()))
         local newY = math.max(0, math.min(mouseY - windowIcon.oldY, screenHeight - windowIcon:GetHeight()))
         windowIcon:SetPosition(newX, newY)
+            -- Saving for Preferences
+    Global.screenWidth , Global.screenHeight = Turbine.UI.Display.GetSize();
+    Global.Settings.iconPosition.left = newX / Global.screenWidth
+    Global.Settings.iconPosition.top = newY / Global.screenHeight
     end
+
 end
 
 --[[

@@ -5,7 +5,7 @@ function Global.RoomDps()
     DpsWindow = Turbine.UI.Window()
     DpsWindow:Focus()
     DpsWindow:SetEnabled(true);
-    DpsWindow:SetPosition(1500, 760);
+    DpsWindow:SetPosition(Global.Settings.roomDps.left * Global.screenWidth, Global.Settings.roomDps.top * Global.screenHeight);
     DpsWindow:SetSize(250, 320);
     DpsWindow.MouseDown = function(sender, args)
         DpsWindow.oldX = args.X
@@ -21,6 +21,10 @@ function Global.RoomDps()
             local newLeft = math.max(0, math.min(newX, screenWidth - DpsWindow:GetWidth()))
             local newTop = math.max(0, math.min(newY, screenHeight - DpsWindow:GetHeight()))
             DpsWindow:SetPosition(newLeft, newTop)
+
+            -- for preferences
+            Global.Settings.roomDps.left = newLeft / Global.screenWidth
+            Global.Settings.roomDps.top = newTop / Global.screenHeight
         end
     end
     DpsWindow.MouseUp = function(sender, args)

@@ -84,7 +84,7 @@ local function updatePlayerDamage() -- Update the label damage of players
 end
 
 -- The Window of onClick image for sending information
-local updateDps = Global.ButtonImage(550, 850, "RaidParser/img/picto-target.tga", 591, 591,
+local updateDps = Global.ButtonImage(Global.Settings.imageBtn.left * Global.screenWidth, Global.Settings.imageBtn.top * Global.screenHeight, "RaidParser/img/picto-target.tga", 591, 591,
     "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";" .. PlayerClass)
    --local updateDps = Global.ButtonImage(550, 850, "RaidParser/img/briqueLait.tga", 600, 562,
     --"/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";" .. PlayerClass)

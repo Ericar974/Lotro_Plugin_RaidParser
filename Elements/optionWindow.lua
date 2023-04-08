@@ -10,7 +10,7 @@ Global.ChatId = 1
 Global.ChaTyte = Turbine.ChatType.UserChat1
 
 Global.options = Turbine.UI.Lotro.GoldWindow()
-Global.options:SetPosition(1500, 350)
+Global.options:SetPosition(Global.screenWidth * Global.Settings.optionWindow.left, Global.screenHeight * Global.Settings.optionWindow.top)
 Global.options:SetSize(400, 400)
 Global.options:SetText('Options')
 Global.options:SetWantsKeyEvents(true) -- setup the key event for escape
@@ -20,6 +20,7 @@ function Global.options.KeyDown(sender, args)
         Global.options:SetVisible(false)
     end
 end
+
 
 import "RaidParser.Class.Button"
 import "RaidParser.Class.HelpLabel"
@@ -47,6 +48,12 @@ windowChan:SetPosition(0, 50)
 windowChan:SetSize(400, 200)
 windowChan:SetVisible(true)
 windowChan:SetZOrder(1)
+
+Global.options.MouseMove = function(sender, args)
+    Global.screenWidth , Global.screenHeight = Turbine.UI.Display.GetSize();
+    Global.Settings.optionWindow.left = Global.options.GetLeft(Global.options) / Global.screenWidth
+    Global.Settings.optionWindow.top = Global.options.GetTop(Global.options) / Global.screenHeight
+end
 
 -- < help label for the command channels is game
 helpListChan = Global.HelpLabel("/listchannels", windowChan, 150, 20)

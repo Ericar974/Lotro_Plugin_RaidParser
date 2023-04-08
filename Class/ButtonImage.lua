@@ -34,7 +34,7 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     ImageWindow.move = Turbine.UI.Window()
     ImageWindow.move:SetParent(window);
     ImageWindow.move:SetSize(10, 10)
-    ImageWindow.move:SetBackColor(Turbine.UI.Color(0.84,0.76,0.33))
+    ImageWindow.move:SetBackColor(Turbine.UI.Color(1,0.95, 0.58, 0))
     ImageWindow.move:SetVisible(false)
     ImageWindow.move:SetZOrder(1)
     ImageWindow.move.MouseDown = function(sender, args)
@@ -52,6 +52,10 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
             local newLeft = math.max(0, math.min(newX, screenWidth - window:GetWidth()))
             local newTop = math.max(0, math.min(newY, screenHeight - window:GetHeight()))
             window:SetPosition(newLeft, newTop)
+
+            -- for preferences
+            Global.Settings.imageBtn.left = newLeft / Global.screenWidth
+            Global.Settings.imageBtn.top = newTop / Global.screenHeight
         end
     end
     
