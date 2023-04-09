@@ -7,6 +7,7 @@ function Global.RoomDps()
     DpsWindow:SetEnabled(true);
     DpsWindow:SetPosition(Global.Settings.roomDps.left * Global.screenWidth, Global.Settings.roomDps.top * Global.screenHeight);
     DpsWindow:SetSize(250, 320);
+    DpsWindow:SetZOrder(-1)
     DpsWindow.MouseDown = function(sender, args)
         DpsWindow.oldX = args.X
         DpsWindow.oldY = args.Y

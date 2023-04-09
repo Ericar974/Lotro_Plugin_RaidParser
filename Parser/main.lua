@@ -15,6 +15,7 @@ import "RaidParser.Elements.optionWindow"
 -- Get the local parse
 import "RaidParser.Lang.en"
 local Parse = Global.ParseEn --import
+-- TODO : Load the correct Lang file.
 -- import "RaidParser.Lang.fr"
 -- import "RaidParser.Lang.de"
 -- >
@@ -40,7 +41,6 @@ Global.saveBtn.MouseClick = function(sender, args)
     ChaTyte = Global.ChaTyte
     SetEnabled(Global.saveBtn, false)
 end
-
 -- >
 
 PlayersList = {} -- PlayersList : Array[Array] with {PlayerName, his damage, his label}
@@ -247,8 +247,8 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track chat ingam
         PlayerDamage = PlayerDamage + var1
         -- >
 
-        -- update every 3seconde the room, the sendBtn
-        if (timestamp - loopingTimer > 3) then
+        -- update every 1.5 seconde the room, the sendBtn
+        if (timestamp - loopingTimer > 1.5) then
             UpdateShortCut(updateDpsBtn, PlayerDamage)
             EnableSendingButton(true)
             if newParse then

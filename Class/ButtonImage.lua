@@ -2,7 +2,7 @@ import "Turbine.UI"
 import "Turbine.UI.Lotro"
 
 --[[
-Class File 
+NON CLASS FILE ==> For now it's use only one time for the display of target, don't duplicate this.
 
 Here we try to make a button/alias look better, 
 
@@ -36,7 +36,7 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     ImageWindow.move:SetSize(10, 10)
     ImageWindow.move:SetBackColor(Turbine.UI.Color(1,0.95, 0.58, 0))
     ImageWindow.move:SetVisible(false)
-    ImageWindow.move:SetZOrder(1)
+    ImageWindow.move:SetZOrder(3)
     ImageWindow.move.MouseDown = function(sender, args)
         window.oldX = args.X
         window.oldY = args.Y
