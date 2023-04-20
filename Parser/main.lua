@@ -9,7 +9,7 @@ import "RaidParser.Class.ResizeImage"
 -- >
 import "RaidParser.Utils.classIcons"
 import "RaidParser.Utils.newPlayerInRoom"
-import "RaidParser.Elements.roomDps"
+import "RaidParser.Elements.Room.main"
 import "RaidParser.Elements.optionWindow"
 
 -- Get the local parse
@@ -27,6 +27,9 @@ local inCombat = true
 PlayerName = Global.localPlayer:GetName()
 PlayerClass = Global.localPlayer:GetClass()
 PlayerDamage = 1 -- set the damage at 1
+PlayerHeal = 1
+PlayerTps = 1
+PlayerPower = 1
 
 
 ChatId = Global.ChatId
@@ -35,25 +38,23 @@ ChaTyte = Global.ChaTyte
 local SetEnabled = function(object, bool)
     object:SetEnabled(bool)
 end
-
-Global.saveBtn.MouseClick = function(sender, args)
-    ChatId = Global.ChatId
-    ChaTyte = Global.ChaTyte
-    SetEnabled(Global.saveBtn, false)
-end
 -- >
 
-PlayersList = {} -- PlayersList : Array[Array] with {PlayerName, his damage, his label}
-DamageMax = 1
+PlayersList = {} -- PlayersList : Array[Array] with ['PlayerName'] = { his damage, his label }
+RoomScoreMax = 1
+PlayerListLength = 0
 
--- Display the dps room
-roomDps = Global.RoomDps()
-DpsWindow = roomDps[1]
-DpsWindow.label = roomDps[2]
+local function tablelength(T)
+    local count = 0
+    for _ in pairs(T) do count = count + 1 end
+    return count
+end
+
+-- Display the room
+local RoomsWindow = Global.Room()
 
 local loopingTimer = Turbine.Engine.GetGameTime();
 local newParse = false
-local found = nil
 
 
 local function abbreviateNumber(number) -- Convert dmg with K / M / B
@@ -70,155 +71,105 @@ end
 
 -- sort the playerList by the damage
 function sortByDamage(a, b)
-    return a[2] > b[2]
+    return a[RoomsWindow.rooms.active] > b[RoomsWindow.rooms.active]
 end
 
-local function updatePlayerDamage() -- Update the label damage of players
-    table.sort(PlayersList, sortByDamage)
-    for i, value in ipairs(PlayersList) do
-        value[3]:SetPosition(0, 10 + 24 * i)
-        value[3].label:SetWidth(250 * value[2] / DamageMax);
-        value[3].labe3:SetText(abbreviateNumber(value[2]) .. " ");
+
+local function updatePlayerDamage(roomUse) -- Update the label damage of players
+    --TODO : DO NOT LAUNCH the function when rooms invisible
+    --if not RoomsWindow.rooms.visible then
+    --    return
+    --end
+    Turbine.Shell.WriteLine(tostring(roomUse))
+    local sortedList = {}
+    for k, v in pairs(PlayersList) do
+        table.insert(sortedList, { k, PlayersList[k][2], PlayersList[k][3],PlayersList[k][4], PlayersList[k][5] })
+    end
+    table.sort(sortedList, sortByDamage)
+    RoomScoreMax = sortedList[1][roomUse]
+    for i, value in ipairs(sortedList) do
+        playeractual = value[1]
+        PlayersList[playeractual][1][roomUse-1]:SetPosition(0, 10 + 24 * i)
+        PlayersList[playeractual][1][roomUse-1].label:SetWidth(250 * value[roomUse] / RoomScoreMax);
+        PlayersList[playeractual][1][roomUse-1].labe3:SetText(abbreviateNumber(value[roomUse]) .. " ");
     end
     newParse = false
 end
 
+Global.updatePlayer = function ()
+    updatePlayerDamage(RoomsWindow.rooms.active)
+end
+
 -- The Window of onClick image for sending information
-local updateDps = Global.ButtonImage(Global.Settings.imageBtn.left * Global.screenWidth, Global.Settings.imageBtn.top * Global.screenHeight, "RaidParser/img/picto-target.tga", 591, 591,
-    "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";" .. PlayerClass)
-   --local updateDps = Global.ButtonImage(550, 850, "RaidParser/img/briqueLait.tga", 600, 562,
-    --"/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";" .. PlayerClass)
+local updateDps = Global.ButtonImage(Global.Settings.imageBtn.left * Global.screenWidth,
+    Global.Settings.imageBtn.top * Global.screenHeight, "RaidParser/img/picto-target.tga", 591, 591,
+    "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";H:" .. PlayerHeal .. ";T:" .. PlayerTps .. ";P:" .. PlayerPower)
+--local updateDps = Global.ButtonImage(550, 850, "RaidParser/img/briqueLait.tga", 600, 562,
+--"/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. PlayerDamage .. ";" .. PlayerClass)
 
 -- The onClick image for update your informations
 local imageUpdateDpsBtn = updateDps[2]
 local updateDpsBtn = updateDps[3]
 
 updateDps[2]:SetVisible(false)
-updateDps[2].move.MouseClick = function (sender, args)
-    UpdateShortCut(updateDpsBtn, PlayerDamage)
+updateDps[2].move.MouseClick = function(sender, args)
+    UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
 end
 
-imageUpdateDpsBtn.MouseClick = function (sender,args)
-    UpdateShortCut(updateDpsBtn, PlayerDamage)
+imageUpdateDpsBtn.MouseClick = function(sender, args)
+    UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
 end
 
 
 EnableSendingButton = function(bool) -- make the updateDpsBtn invisible/visible
     updateDpsBtn.quickslot:SetVisible(bool);
     updateDps[2]:SetVisible(bool);
-    updateDps[2].move:SetVisible(bool);
+end
+
+Global.saveBtn.MouseClick = function(sender, args)
+    ChatId = Global.ChatId
+    ChaTyte = Global.ChaTyte
+    SetEnabled(Global.saveBtn, false)
+    UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
 end
 
 -- Update the data of the image that is sent to the chat
-UpdateShortCut = function(quickslot, value) -- Actualize the shortcut of onClick Image/updateDpsBrn
+UpdateShortCut = function(quickslot, damage, heal, tps, power) -- Actualize the shortcut of onClick Image/updateDpsBrn
     quickslot.quickslot:SetShortcut(Turbine.UI.Lotro.Shortcut(Turbine.UI.Lotro.ShortcutType.Alias,
-        "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. value .. ";" .. PlayerClass));
+        "/" .. ChatId .. " N:" .. PlayerName .. ";D:" .. damage .. ";H:" .. heal .. ";T:" .. tps .. ";P:" .. power));
 end
 
 -- regex for all player
-local regex = "N:([%a]+);D:([%d%.]+);"
-local regexTable = { "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x" }
-local regeneragteRegex = function()
-    for i, value in ipairs(PlayersList) do
-        beforeName = "N:("
-        name = ""
-        afterName = ");D:([%d%.]+);"
-        name = name .. beforeName .. value[1] .. afterName
-        regexTable[i] = name
-    end
-    regex = "^x"
-end
-
--- antispam for joining the room
-local nbSpam = 0
+local regex = "N:([%a]+);D:([%d%.]+);H:([%d%.]+);T:([%d%.]+);P:([%d%.]+)"
 
 updateDpsBtn.quickslot.MouseClick = function(sender, args) -- make the updateDpsBtn invisible at click
     EnableSendingButton(false)
-    if not isStarted then
-        if nbSpam < 2 then -- antispam ( 3 try )
-            EnableSendingButton(true)
-            nbSpam = nbSpam + 1
-            return
-        end
-        return
-    end
 end
 
 --setup of all buttons of Options Window and these functions MouseClick
 local isListening = false
 local isStarted = false
 
-synchroBtn = Global.Button("Synchro", Global.helpToLaunch, 10, 100, 80, 50, true)
-startBtn = Global.Button("Start", Global.helpToLaunch, 110, 100, 80, 50, false)
-resetBtn = Global.Button("Reset", Global.helpToLaunch, 210, 100, 80, 50, false)
-stopBtn = Global.Button("Quit", Global.helpToLaunch, 310, 100, 80, 50, false)
+resetBtn = Global.Button("Reset", Global.helpToLaunch, 150, 100, 80, 50, true)
 
 -- onclick
-synchroBtn.MouseClick = function(sender, args)
-    UpdateShortCut(updateDpsBtn, PlayerDamage)
-    SetEnabled(synchroBtn, false)
-    Global.helpToLaunch.labelSync:SetVisible(false)
-    Global.helpToLaunch.labelInit:SetVisible(true)
-    SetEnabled(stopBtn, true)
-    isListening = true
-    DpsWindow:SetVisible(true);
-    EnableSendingButton(true)
-end
-
-startBtn.MouseClick = function(sender, args)
-    Global.options:SetVisible(false)
-    EnableSendingButton(false)
-    SetEnabled(resetBtn, true)
-    SetEnabled(startBtn, false)
-    Global.helpToLaunch.labelInit:SetVisible(false)
-    Global.helpToLaunch.labelStart:SetVisible(true)
-    PlayerDamage = 0
-    isStarted = true
-    UpdateShortCut(updateDpsBtn, PlayerDamage)
-    regeneragteRegex()
-end
 
 resetBtn.MouseClick = function(sender, args)
-    EnableSendingButton(false)
     inCombat = true
     PlayerDamage = 0
-    DamageMax = 1
-    for i, value in ipairs(PlayersList) do
-        value[2] = 1
-    end
-    updatePlayerDamage()
+    PlayerHeal = 0
+    PlayerTps = 0
+    PlayerPower = 0
+    RoomScoreMax = 1
+    for k,v in pairs(PlayersList) do
+        v[2] = 1
+        v[3] = 1
+        v[4] = 1
+        v[5] = 1
+      end
+    updatePlayerDamage(RoomsWindow.rooms.active)
+    UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
 end
-
--- stopBtn mean quit the room and reset all parameters
-stopBtn.MouseClick = function(sender, args)
-    -- reset the Dps window
-    roomDps = Global.RoomDps()
-    DpsWindow = roomDps[1]
-    DpsWindow.label = roomDps[2]
-    -- reset btns
-    SetEnabled(stopBtn, false)
-    SetEnabled(resetBtn, false)
-    SetEnabled(startBtn, false)
-    SetEnabled(synchroBtn, true)
-    Global.helpToLaunch.labelSync:SetVisible(true)
-    Global.helpToLaunch.labelInit:SetVisible(false)
-    Global.helpToLaunch.labelStart:SetVisible(false)
-    newParse = false
-    isListening = false
-    isStarted = false
-    PlayerDamage = 1
-    DamageMax = 1
-    nbSpam = 0
-    EnableSendingButton(false)
-    UpdateShortCut(updateDpsBtn, PlayerDamage)
-    inCombat = true
-    PlayersList = {}
-    regex = "N:([%a]+);D:([%d%.]+);"
-    regexTable = { "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x", "^x" }
-    found = nil
-    updatePlayerDamage()
-end
--->
 
 function AddCallback(object, event, callback)
     if (object[event] == nil) then
@@ -243,67 +194,50 @@ AddCallback(Turbine.Chat, "Received", function(sender, args) -- track chat ingam
         --              1, initiatorName, targetName, skillName, amount, avoidType, critType, dmgType;
         local updateType, initiatorName, targetName, skillName, var1, var2, var3, var4 = Parse(string.gsub(
             string.gsub(args.Message, "<rgb=#......>(.*)</rgb>", "%1"), "^%s*(.-)%s*$", "%1"));
-        if (updateType == nil) then return end
-        PlayerDamage = PlayerDamage + var1
+        if (updateType == nil) then 
+            return
+        elseif updateType == 1 then
+             PlayerDamage = PlayerDamage + var1
+        elseif updateType == 2 then
+            PlayerHeal = PlayerHeal + var1
+        elseif updateType == 3 then
+            PlayerTps = PlayerTps + var1
+        elseif updateType == 4 then
+            PlayerPower = PlayerPower + var1
+        end
+       
         -- >
 
         -- update every 1.5 seconde the room, the sendBtn
         if (timestamp - loopingTimer > 1.5) then
-            UpdateShortCut(updateDpsBtn, PlayerDamage)
+            UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
             EnableSendingButton(true)
             if newParse then
-                updatePlayerDamage()
+                updatePlayerDamage(RoomsWindow.rooms.active)
             end
             loopingTimer = timestamp
         end
         return
 
         -- < RAID CHAT COMBAT
-        -- try all regex from playeList
-    elseif (isListening and args.ChatType == ChaTyte and
-        (string.match(args.Message, regex) or string.match(args.Message, regexTable[1]) or string.match(args.Message, regexTable[2]) or string.match(args.Message, regexTable[3])
-        or string.match(args.Message, regexTable[4]) or string.match(args.Message, regexTable[5]) or string.match(args.Message, regexTable[6])
-        or string.match(args.Message, regexTable[7]) or string.match(args.Message, regexTable[8]) or string.match(args.Message, regexTable[9])
-        or string.match(args.Message, regexTable[10]) or string.match(args.Message, regexTable[11]) or string.match(args.Message, regexTable[12]))
-        ) then
+    elseif (isListening and args.ChatType == ChaTyte and string.match(args.Message, regex)) then
         local player = string.match(args.Message, "N:([%a]+);")
-        local damage = string.match(args.Message, "D:([%d%.]+);")
+        local damage = tonumber(string.match(args.Message, "D:([%d%.]+);"))
+        local heal = tonumber(string.match(args.Message, "H:([%d%.]+);"))
+        local tps = tonumber(string.match(args.Message, "T:([%d%.]+);"))
+        local power = tonumber(string.match(args.Message, "P:([%d%.]+)"))
 
-        -- 1/ When room isn't setup
-        if not isStarted then
-            SetEnabled(startBtn, true)
-            -- < foreach player in PlayersList
-            found = false
-            for i, value in ipairs(PlayersList) do
-                if value[1] == player then
-                    found = true
-                end
-            end
-            -- />
-            if not found and #PlayersList < 12 then
-                class = string.match(args.Message, "D:[%d%.]+;(.+)'")
-
-                table.insert(PlayersList, #PlayersList + 1, { player, 1, Turbine.UI.Window() })
-                Global.newPlayer(player, 1, #PlayersList, class)
+        -- >
+        if PlayersList[player] ~= nil then
+            PlayersList[player][2] = damage
+            PlayersList[player][3] = heal
+            PlayersList[player][4] = tps
+            PlayersList[player][5] = power
+            newParse = true
+            if not inCombat then
+                updatePlayerDamage(RoomsWindow.rooms.active)
             end
             return
-        end
-        -- 2/ When room lock
-        -- < if damage is bigger than DamageMax we change DamageMax
-        damage = tonumber(damage)
-        if (damage > DamageMax) then
-            DamageMax = damage
-        end
-        -- >
-        for i, value in ipairs(PlayersList) do
-            if value[1] == player then
-                value[2] = damage
-                newParse = true
-                if not inCombat then
-                    updatePlayerDamage()
-                end
-                return
-            end
         end
         return
         -- >
@@ -314,8 +248,166 @@ end);
 AddCallback(Global.localPlayer, "InCombatChanged", function()
     inCombat = Global.localPlayer:IsInCombat();
     if (not inCombat) then
-        updatePlayerDamage()
-        UpdateShortCut(updateDpsBtn, PlayerDamage)
+        updatePlayerDamage(RoomsWindow.rooms.active)
+        UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
         EnableSendingButton(true)
     end
+end);
+
+-- group function
+local player = Global.localPlayer
+local party
+local isGroup = false
+local partyLength
+local name
+
+
+--< start of the plugin : init the window
+if (type(player:GetParty()) == 'table') then
+    isGroup = true
+    PlayerDamage = 0
+    PlayerHeal = 0
+    PlayerTps = 0
+    PlayerPower = 0
+    isStarted = true
+    UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
+    party = player:GetParty();
+    partyLength = party:GetMemberCount()
+    RoomsWindow:SetVisible(true);
+    EnableSendingButton(true)
+    isListening = true
+    for i = 1, partyLength do
+        if i < 12 then
+            name = tostring(party:GetMember(i):GetName())
+            PlayersList[name] = { { Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window()}, 1, 1, 1, 1 }
+            PlayerListLength = tablelength(PlayersList)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+            RoomsWindow.rooms.dpsWindow,1)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+            RoomsWindow.rooms.healWindow,2)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+            RoomsWindow.rooms.tankWindow,3)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+            RoomsWindow.rooms.powerWindow,4)
+        end
+        if i == 12 then
+            name = tostring(player:GetName())
+            PlayersList[name] = { { Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window()}, 1, 1, 1, 1 }
+            PlayerListLength = tablelength(PlayersList)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.dpsWindow, 1)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.healWindow, 2)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.tankWindow, 3)
+            Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.powerWindow, 4)
+        end
+    end
+    Turbine.Shell.WriteLine(PlayerListLength)
+end
+-->
+
+AddCallback(player, "PartyChanged", function()
+    Turbine.Shell.WriteLine('PartyChanged')
+    if (type(player:GetParty()) == 'table') then
+        if isGroup == false then
+            isGroup = true
+            PlayerDamage = 0
+            PlayerHeal = 0
+            PlayerTps = 0
+            PlayerPower = 0
+            isStarted = true
+            UpdateShortCut(updateDpsBtn, PlayerDamage)
+            party = player:GetParty();
+            partyLength = party:GetMemberCount()
+            RoomsWindow:SetVisible(true);
+            EnableSendingButton(true)
+            isListening = true
+            for i = 1, partyLength do
+                if i < 12 then
+                    name = tostring(party:GetMember(i):GetName())
+                    PlayersList[name] = { { Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window()}, 1,1,1,1 }
+                    PlayerListLength = tablelength(PlayersList)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+                    RoomsWindow.rooms.dpsWindow, 1)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+                    RoomsWindow.rooms.healWindow, 2)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+                    RoomsWindow.rooms.tankWindow, 3)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(party:GetMember(i):GetClass()),
+                    RoomsWindow.rooms.powerWindow, 4)
+                elseif i == 12 then
+                    name = tostring(player:GetName())
+                    PlayersList[name] = { { Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window()}, 1,1,1,1 }
+                    PlayerListLength = tablelength(PlayersList)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.dpsWindow, 1)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.healWindow, 2)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.tankWindow, 3)
+                    Global.newPlayer(name, 1, PlayerListLength, tostring(player:GetClass()), RoomsWindow.rooms.powerWindow, 4)
+                end
+            end
+        end
+    else
+        -- if no group/raid juste reset all
+        isGroup = false
+        RoomsWindow:SetVisible(false)
+        RoomsWindow = Global.Room()
+        newParse = false
+        isStarted = false
+        PlayerDamage = 1
+        PlayerHeal = 1
+        PlayerTps = 1
+        PlayerPower = 1
+        RoomScoreMax = 1
+        EnableSendingButton(false)
+        UpdateShortCut(updateDpsBtn, PlayerDamage, PlayerHeal, PlayerTps, PlayerPower)
+        inCombat = true
+        PlayersList = {}
+        regex = "N:([%a]+);D:([%d%.]+);H:([%d%.]+);T:([%d%.]+);P:([%d%.]+)"
+        updatePlayerDamage(RoomsWindow.rooms.active)
+    end
+end);
+
+AddCallback(Turbine.Gameplay.Party, "LeaderChanged", function()
+    party = Turbine.Gameplay.LocalPlayer:GetInstance():GetParty()
+    Turbine.Shell.WriteLine('LeaderChanged :' .. party.GetLeader(party):GetName())
+end);
+
+AddCallback(Turbine.Gameplay.Party, "MemberAdded", function(sender, args)
+    party = Turbine.Gameplay.LocalPlayer:GetInstance():GetParty()
+    name = tostring(args.Player:GetName())
+    partyLength = party:GetMemberCount()
+    if partyLength < 13 then
+        PlayersList[name] = { { Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window(), Turbine.UI.Window()}, 1,1,1,1 }
+        PlayerListLength = tablelength(PlayersList)
+        Global.newPlayer(name, 1, PlayerListLength, tostring(args.Player:GetClass()), RoomsWindow.rooms.dpsWindow, 1)
+        Global.newPlayer(name, 1, PlayerListLength, tostring(args.Player:GetClass()), RoomsWindow.rooms.healWindow, 2)
+        Global.newPlayer(name, 1, PlayerListLength, tostring(args.Player:GetClass()), RoomsWindow.rooms.tankWindow, 3)
+        Global.newPlayer(name, 1, PlayerListLength, tostring(args.Player:GetClass()), RoomsWindow.rooms.powerWindow, 4)
+        updatePlayerDamage(RoomsWindow.rooms.active)
+    end
+end);
+
+AddCallback(Turbine.Gameplay.Party, "MemberRemoved", function(sender, args)
+    party = Turbine.Gameplay.LocalPlayer:GetInstance():GetParty()
+    name = tostring(args.Player:GetName())
+    PlayersList[name][1][2]:SetVisible(false)
+    PlayersList[name][1][2].icon = nil
+    PlayersList[name][1][2].label = nil
+    PlayersList[name][1][2].labe2 = nil
+    PlayersList[name][1][2].labe3 = nil
+    PlayersList[name][1][3]:SetVisible(false)
+    PlayersList[name][1][3].icon = nil
+    PlayersList[name][1][3].label = nil
+    PlayersList[name][1][3].labe2 = nil
+    PlayersList[name][1][3].labe3 = nil
+    PlayersList[name][1][4]:SetVisible(false)
+    PlayersList[name][1][4].icon = nil
+    PlayersList[name][1][4].label = nil
+    PlayersList[name][1][4].labe2 = nil
+    PlayersList[name][1][4].labe3 = nil
+    PlayersList[name][1][5]:SetVisible(false)
+    PlayersList[name][1][5].icon = nil
+    PlayersList[name][1][5].label = nil
+    PlayersList[name][1][5].labe2 = nil
+    PlayersList[name][1][5].labe3 = nil
+    PlayersList[name] = nil
+    updatePlayerDamage(RoomsWindow.rooms.active)
 end);

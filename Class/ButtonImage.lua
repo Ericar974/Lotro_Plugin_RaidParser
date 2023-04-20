@@ -20,6 +20,7 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     window:SetPosition(x, y)
     window:SetSize(110, 110)
     window:SetVisible(true)
+    window:SetWantsKeyEvents(true)
     
     -- Window for displaying image
     ImageWindow = Turbine.UI.Window()
@@ -33,14 +34,20 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     
     ImageWindow.move = Turbine.UI.Window()
     ImageWindow.move:SetParent(window);
-    ImageWindow.move:SetSize(10, 10)
-    ImageWindow.move:SetBackColor(Turbine.UI.Color(1,0.95, 0.58, 0))
+    ImageWindow.move:SetSize(20, 20)
+    ImageWindow.move:SetBackground("RaidParser/img/drag.tga")
     ImageWindow.move:SetVisible(false)
     ImageWindow.move:SetZOrder(3)
+    ImageWindow.move:SetWantsKeyEvents(true)
     ImageWindow.move.MouseDown = function(sender, args)
         window.oldX = args.X
         window.oldY = args.Y
         window.dragging = true
+    end
+    window.KeyDown = function(sender, args)
+        if (args.Action == Turbine.UI.Lotro.Action.ToggleHiddenDragBoxes) then
+            ImageWindow.move:SetVisible(not ImageWindow.move:IsVisible())
+        end
     end
     
     ImageWindow.move.MouseMove = function(sender, args)

@@ -21,6 +21,9 @@ Global.Original_Settings = {
     imageBtn = {
         left = 0.50,
         top = 0.50,
+    },
+    chan = {
+        {1, Turbine.ChatType.UserChat1, "1"}
     }
 }
 
@@ -39,5 +42,5 @@ end
 
 Turbine.Plugin.Unload = function (sender, args)
     SavePreferences();
-    Turbine.Shell.WriteLine("RaidParser: The plugin does not take resources if there is no room started");
+    --Turbine.Shell.WriteLine("RaidParser: The plugin does not take resources if there is no room started");
 end

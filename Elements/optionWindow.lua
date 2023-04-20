@@ -6,8 +6,11 @@ import "Turbine.UI.Lotro"
 Global.optionsVisible = function()
     Global.options:SetVisible(not Global.options:IsVisible())
 end
-Global.ChatId = 1
-Global.ChaTyte = Turbine.ChatType.UserChat1
+
+Global.ChatNb = Global.Settings.chan[1]
+Global.ChaTyte = Global.Settings.chan[2]
+Global.ChatId =  Global.Settings.chan[3]
+
 
 Global.options = Turbine.UI.Lotro.GoldWindow()
 Global.options:SetPosition(Global.screenWidth * Global.Settings.optionWindow.left, Global.screenHeight * Global.Settings.optionWindow.top)
@@ -29,7 +32,7 @@ import "RaidParser.Class.HelpLabel"
 -- < setup the chan
 -- Create a table to store the button states
 buttonStates = {
-    { false, 1,  Turbine.ChatType.UserChat1,  '1' },
+    { true, 1,  Turbine.ChatType.UserChat1,  '1' },
     { true,  2,  Turbine.ChatType.UserChat2,  '2' },
     { true,  3,  Turbine.ChatType.UserChat3,  '3' },
     { true,  4,  Turbine.ChatType.UserChat4,  '4' },
@@ -40,6 +43,11 @@ buttonStates = {
     { true,  9,  Turbine.ChatType.Fellowship, 'f' },
     { true,  10, Turbine.ChatType.Raid,       'ra' }
 }
+for i, value in ipairs(buttonStates) do
+    if(value[2] == Global.Settings.chan[1])then
+        value[1] = false
+    end
+end
 
 --window container for btns
 windowChan = Turbine.UI.Window()
@@ -97,6 +105,7 @@ for i = 1, 10 do
             if j == i then
                 buttonStates[j][1] = false
                 Global.ChatId = buttonStates[j][4]
+                Global.ChatNb =  buttonStates[j][2]
                 Global.ChaTyte = buttonStates[j][3]
             else
                 buttonStates[j][1] = true
@@ -104,6 +113,8 @@ for i = 1, 10 do
             buttons[j]:SetEnabled(buttonStates[j][1])
         end
         Global.saveBtn:SetEnabled(true)
+        -- for preferences
+        Global.Settings.chan = {Global.ChatNb, Global.ChaTyte, Global.ChatId}
     end
 end
 
@@ -122,16 +133,3 @@ Global.helpToLaunch:SetVisible(true)
 
 helpChan = Global.HelpLabel("Select an UserChan#", windowChan, 400, 20)
 
-Global.helpToLaunch.labelSync = Global.HelpLabel(
-    "Everyone need to synchronize before continuing",
-    Global.helpToLaunch, 400, 100)
-
-Global.helpToLaunch.labelInit = Global.HelpLabel(
-    "If everyone synchronized, click on the target to enter in the room, Start will lock the room",
-    Global.helpToLaunch, 400, 100)
-Global.helpToLaunch.labelInit:SetVisible(false)
-
-Global.helpToLaunch.labelStart = Global.HelpLabel(
-    "You can quit the room OR you can reset the actual room (if the group reset, everyone as to)",
-    Global.helpToLaunch, 400, 100)
-Global.helpToLaunch.labelStart:SetVisible(false)

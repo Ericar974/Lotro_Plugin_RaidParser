@@ -22,3 +22,5 @@ import "RaidParser.Preferences.main" -- users preferences
 import "RaidParser.Parser.main" -- import the parser
 import "RaidParser.Class.Button"
 import "RaidParser.Elements.iconWindow"
+
+import "RaidParser.Elements.Room.main"

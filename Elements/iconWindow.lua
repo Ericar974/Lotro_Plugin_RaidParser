@@ -8,7 +8,7 @@ windowIcon = Turbine.UI.Window()
 windowIcon:SetPosition(Global.Settings.iconPosition.left * Global.screenWidth, Global.Settings.iconPosition.top * Global.screenHeight)
 windowIcon:SetSize(69,50)
 windowIcon:SetOpacity(0.5)
-windowIcon:SetZOrder(1)
+windowIcon:SetZOrder(5)
 windowIcon:SetVisible(true)
 
 icon =  Turbine.UI.CheckBox()
