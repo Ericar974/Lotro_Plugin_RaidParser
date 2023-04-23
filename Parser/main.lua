@@ -82,6 +82,10 @@ local function updatePlayerDamage(roomUse) -- Update the label damage of players
         table.insert(sortedList, { k, PlayersList[k][2], PlayersList[k][3], PlayersList[k][4], PlayersList[k][5] })
     end
     table.sort(sortedList, sortByDamage)
+    if sortedList[1] == nil then
+        newParse = false
+        return
+    end
     RoomScoreMax = sortedList[1][roomUse]
     for i, value in ipairs(sortedList) do
         playeractual = value[1]
