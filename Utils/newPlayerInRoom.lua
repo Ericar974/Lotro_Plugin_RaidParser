@@ -8,7 +8,6 @@ Global.newPlayer = function(player, damage, index, class, parent, window)
      PlayersList[player][1][window]:SetSize(250 * damage / RoomScoreMax, 22);
      PlayersList[player][1][window]:SetEnabled(true)
      PlayersList[player][1][window]:SetVisible(true)
-     Turbine.Shell.WriteLine(window)
 
      PlayersList[player][1][window].icon = Global.ResizeImage(Global.classIcon[class][1], 120, 120,  PlayersList[player][1][window], 22, 22)
 

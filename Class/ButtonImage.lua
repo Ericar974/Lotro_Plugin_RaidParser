@@ -18,7 +18,7 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
 
     local window = Turbine.UI.Window()
     window:SetPosition(x, y)
-    window:SetSize(110, 110)
+    window:SetSize(80, 80)
     window:SetVisible(true)
     window:SetWantsKeyEvents(true)
     
@@ -26,12 +26,22 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     ImageWindow = Turbine.UI.Window()
     ImageWindow:SetParent(window);
     -- < litle trick to get the corect size of the image
+    ImageWindow:SetPosition(10, 10)
     ImageWindow:SetSize(imageWidth, imageHeight)
     ImageWindow:SetBackground(imagePath); --img path
     ImageWindow:SetStretchMode(1);
     ImageWindow:SetSize(70, 70)                   -- >
     ImageWindow:SetVisible(true)
     
+    ImageWindow.hiddenMsg = Turbine.UI.Label()
+    ImageWindow.hiddenMsg:SetParent(window)
+    ImageWindow.hiddenMsg:SetPosition(20, 0)
+    ImageWindow.hiddenMsg:SetSize(100, 20)
+    ImageWindow.hiddenMsg:SetVisible(false)
+    ImageWindow.hiddenMsg:SetZOrder(3)
+    ImageWindow.hiddenMsg:SetWantsKeyEvents(true)
+    ImageWindow.hiddenMsg:SetText('RP: icon')
+
     ImageWindow.move = Turbine.UI.Window()
     ImageWindow.move:SetParent(window);
     ImageWindow.move:SetSize(20, 20)
@@ -47,6 +57,7 @@ function Global.ButtonImage(x,y,imagePath, imageWidth, imageHeight, shortcut) --
     window.KeyDown = function(sender, args)
         if (args.Action == Turbine.UI.Lotro.Action.ToggleHiddenDragBoxes) then
             ImageWindow.move:SetVisible(not ImageWindow.move:IsVisible())
+            ImageWindow.hiddenMsg:SetVisible(not ImageWindow.hiddenMsg:IsVisible())
         end
     end
     

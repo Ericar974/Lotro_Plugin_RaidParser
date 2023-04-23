@@ -6,30 +6,20 @@ import "Turbine.UI.Lotro"
 -- preferences for character ( keep things at the same place )
 
 Global.Original_Settings = {
-    iconPosition = {
-        left = 0.50,
-        top = 0.50,
-    },
-    optionWindow = {
-        left = 0.70,
-        top = 0.30,
-    },
     roomDps = {
-        left = 0.30,
-        top = 0.20,
+        left = 0.85,
+        top = 0.60,
     },
     imageBtn = {
-        left = 0.50,
-        top = 0.50,
+        left = 0.80,
+        top = 0.62,
     },
-    chan = {
-        {1, Turbine.ChatType.UserChat1, "1"}
-    }
+    chan = {1, Turbine.ChatType.UserChat1, "1"}
 }
 
 Global.Settings = {}
 
-local loadPrefs = Turbine.PluginData.Load(Turbine.DataScope.Character, "RaidParser_prefs")
+local loadPrefs = Turbine.PluginData.Load(Turbine.DataScope.Character, "BETARaidParser_prefs")
 
 if(type(loadPrefs) == 'table')then 
     Global.Settings = loadPrefs
@@ -37,10 +27,9 @@ else
     Global.Settings = Global.Original_Settings
 end
 function SavePreferences()
-    Turbine.PluginData.Save(Turbine.DataScope.Character, "RaidParser_prefs", Global.Settings)
+    Turbine.PluginData.Save(Turbine.DataScope.Character, "BETARaidParser_prefs", Global.Settings)
 end
 
 Turbine.Plugin.Unload = function (sender, args)
     SavePreferences();
-    --Turbine.Shell.WriteLine("RaidParser: The plugin does not take resources if there is no room started");
 end

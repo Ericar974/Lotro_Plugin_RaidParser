@@ -1,6 +1,7 @@
 -- parse EN from CombatAnalysis
 Global.ParseEn = function(line)
     -- 1) Damage line ---
+	local playerName = Turbine.Gameplay.LocalPlayer.GetInstance():GetName()
 	
 	local initiatorName,avoidAndCrit,skillName,targetNameAmountAndType = string.match(line,"^(.*) scored a (.*)hit(.*) on (.*)%.$"); -- (updated in v4.1.0)
 	
@@ -54,8 +55,6 @@ Global.ParseEn = function(line)
 		-- Update
 		return 1,initiatorName,targetName,skillName,amount,avoidType,critType,dmgType;
 	end
-	--[[
-	comment...
 	
 
 	
@@ -97,8 +96,20 @@ Global.ParseEn = function(line)
 		-- Update
 		return (moralePower == 2 and 4 or 3),initiatorName,targetName,skillName,amount,critType;
 	end
-
-    -- 4) Avoid line --
+	
+	-- 3) Buff line --
+	
+	local initiatorName,skillName,targetName = string.match(line,"^(.*) applied a benefit with (.*) on (.*)%.$");
+	
+	if (initiatorName ~= nil) then
+		initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+		targetName = string.gsub(targetName,"^[Tt]he ","");
+		
+		-- Update
+		return 17,initiatorName,targetName,skillName;
+	end
+	
+	-- 4) Avoid line --
 	local initiatorNameMiss,skillName,targetNameAvoidType = string.match(line,"^(.*) to use (.*) on (.*)%.$");
 	
 	if (initiatorNameMiss ~= nil) then
@@ -170,5 +181,173 @@ Global.ParseEn = function(line)
 			return 3,initiatorName,targetName,skillName,amount,1;
 		end
 	end
-		]]
+	
+	-- 6) Temporary Morale bubble line (as of 4.1.0)
+  local amount = string.match(line,"^You have lost ([%d,]*) points of temporary Morale!$");
+	if (amount ~= nil) then
+		amount = string.gsub(amount,",","")+0;
+		
+		-- the only information we can extract directly is the target and amount
+		return 14,nil,playerName,nil,amount;
+	end
+	
+	-- 7) Combat State Break notice (as of 4.1.0)
+	
+	-- 7a) Root broken
+	local targetName = string.match(line,"^.* ha[sv]e? released (.*) from being immobilized!$");
+	if (targetName ~= nil) then
+		targetName = string.gsub(targetName,"^[Tt]he ","");
+		
+		-- the only information we can extract directly is the target name
+		return 16,nil,targetName,nil;
+	end
+	
+	-- 7b) Daze broken
+	local targetName = string.match(line,"^.* ha[sv]e? freed (.*) from a daze!$");
+	if (targetName ~= nil) then
+		targetName = string.gsub(targetName,"^[Tt]he ","");
+		
+		-- the only information we can extract directly is the target name
+		return 16,nil,targetName,nil;
+	end
+	
+	-- 7c) Fear broken (TODO: Check)
+	local targetName = string.match(line,"^.* ha[sv]e? freed (.*) from a fear!$");
+	if (targetName ~= nil) then
+		targetName = string.gsub(targetName,"^[Tt]he ","");
+		
+		-- the only information we can extract directly is the target name
+		return 16,nil,targetName,nil;
+	end
+	
+	-- 8) Interrupt line --
+	
+	local targetName, initiatorName = string.match(line,"^(.*) was interrupted by (.*)!$");
+	
+	if (targetName ~= nil) then
+		initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+		targetName = string.gsub(targetName,"^[Tt]he ","");
+		
+		-- Update
+		return 7,initiatorName,targetName;
+	end
+	
+	-- 9) Dispell line (corruption removal) --
+	
+	local corruption, targetName = string.match(line,"You have dispelled (.*) from (.*)%.$");
+	
+	if (corruption ~= nil) then
+		initiatorName = playerName;
+		targetName = string.gsub(targetName,"^[Tt]he ","");
+		
+		-- NB: Currently ignore corruption name
+		
+		-- Update
+		return 8,initiatorName,targetName;
+	end
+	
+	-- 10) Defeat lines ---
+	
+	-- 10a) Defeat line 1 (mob or played was killed)
+	local initiatorName = string.match(line,"^.* defeated (.*)%.$");
+	
+	if (initiatorName ~= nil) then
+		initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+		
+		-- Update
+		return 9,initiatorName;
+	end
+	
+	-- 10b) Defeat line 2 (mob died)
+	local initiatorName = string.match(line,"^(.*) died%.$");
+
+	if (initiatorName ~= nil) then
+		initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+		
+		-- Update
+		return 9,initiatorName;
+	end
+	
+	-- 10c) Defeat line 3 (a player was killed or died)
+	local initiatorName = string.match(line,"^(.*) has been defeated%.$");
+
+	if (initiatorName ~= nil) then
+		initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+		
+		-- Update
+		return 9,initiatorName;
+	end
+	
+	-- 10d) Defeat line 4 (you were killed)
+	local match = string.match(line,"^.* incapacitated you%.$");
+
+	if (match ~= nil) then
+		initiatorName = playerName;
+		
+		-- Update
+		return 9,initiatorName;
+	end
+	
+	-- 10e) Defeat line 5 (you died)
+	local match = string.match(line,"^You have been incapacitated by misadventure%.$");
+
+	if (match ~= nil) then
+		initiatorName = playerName;
+		
+		-- Update
+		return 9,initiatorName;
+	end
+	
+	-- 10f) Defeat line 6 (you killed a mob)
+	local initiatorName = string.match(line,"^Your mighty blow topples (.*)%.$");
+	
+	if (initiatorName ~= nil) then
+		initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+		
+		-- Update
+		return 9,initiatorName;
+	end
+	
+	-- 11) Revive lines --
+	
+	-- 11a) Revive line 1 (player revived)
+	local initiatorName = string.match(line,"^(.*) has been revived%.$");
+	
+	if (initiatorName ~= nil) then
+	  initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+	  
+		-- Update
+	  return 10,initiatorName;
+	end
+	
+	-- 11b) Revive line 2 (player succumbed)
+	local initiatorName = string.match(line,"^(.*) has succumbed to .* wounds%.$");
+	
+	if (initiatorName ~= nil) then
+	  initiatorName = string.gsub(initiatorName,"^[Tt]he ","");
+	  
+		-- Update
+	  return 10,initiatorName;
+	end
+	
+	-- 11c) Revive line 3 (you were revived)
+	local match = string.match(line,"^You have been revived%.$");
+	
+	if (match ~= nil) then
+	  initiatorName = playerName;
+	  
+		-- Update
+	  return 10,initiatorName;
+	end
+	
+	-- 11d) Revive line 4 (you succumbed)
+	local match = string.match(line,"^You succumb to your wounds%.$");
+	
+	if (match ~= nil) then
+	  initiatorName = playerName;
+	  
+		-- Update
+	  return 10,initiatorName;
+	end
+		
 end
